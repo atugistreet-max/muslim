@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ムスリム問題ウォッチ アーカイブ</title>
 
+  <!-- OGP (Open Graph Protocol) 設定 -->
+  <meta property="og:title" content="ムスリム問題ウォッチ アーカイブ">
+  <meta property="og:description" content="国内各地の動向・SNS投稿・報道記録のデータベース">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="./ogp.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="./ogp.png">
+
   <!-- Google tag (gtag.js) - 健康管理アプリと同じGA4測定ID -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZKVVRD15VN"></script>
   <script>
@@ -37,24 +45,34 @@
 </head>
 <body class="text-slate-800 min-h-screen flex flex-col">
 
-  <!-- ヘッダー -->
+  <!-- ヘッダー（バナー画像組み込み） -->
   <header class="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white shadow-md sticky top-0 z-20">
-    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-      <div>
-        <h1 class="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2">
-          <span>🔍</span> ムスリム問題ウォッチ アーカイブ
-        </h1>
-        <p class="text-xs sm:text-sm text-slate-300 mt-0.5">国内各地の動向・SNS投稿・報道記録のデータベース（全8カテゴリ対応）</p>
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      
+      <!-- ロゴ・バナー画像 ＆ タイトル -->
+      <div class="flex items-center gap-3">
+        <img src="./ogp.png" alt="ムスリム問題ウォッチ バナー" 
+             class="h-12 w-auto sm:h-14 rounded-lg shadow-sm border border-slate-700/80 object-cover shrink-0 bg-slate-900"
+             onerror="this.style.display='none'">
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2">
+            <span>🔍</span> ムスリム問題ウォッチ アーカイブ
+          </h1>
+          <p class="text-xs sm:text-sm text-slate-300 mt-0.5">国内各地の動向・SNS投稿・報道記録のデータベース（全8カテゴリ対応）</p>
+        </div>
       </div>
-      <div class="flex items-center gap-2 self-end sm:self-auto">
+
+      <!-- ステータス ＆ 最新読込ボタン -->
+      <div class="flex items-center gap-2 self-end sm:self-auto shrink-0">
         <span id="status-indicator" class="text-xs bg-slate-700/90 text-slate-200 px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-slate-600">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
           データ読込中...
         </span>
-        <button id="refresh-btn" onclick="fetchSheetData(true)" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-3 py-1.5 rounded-lg transition flex items-center gap-1 shadow-sm">
+        <button id="refresh-btn" onclick="fetchSheetData(true)" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-3.5 py-1.5 rounded-lg transition flex items-center gap-1 shadow-sm">
           🔄 最新読込
         </button>
       </div>
+
     </div>
   </header>
 
@@ -67,7 +85,7 @@
       スプレッドシート右上の「共有」ボタンから、一般的なアクセスを<strong>「リンクを知っている全員（閲覧者）」</strong>に設定してください（現在は内蔵された最新58件のデータを表示しています）。
     </div>
 
-    <!-- カテゴリ別 集計サマリーバー（8カテゴリ対応：モバイル2列 / タブレット4列） -->
+    <!-- カテゴリ別 集計サマリーバー -->
     <section id="summary-stats" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-6">
       <!-- JSで動的生成 -->
     </section>
@@ -187,12 +205,10 @@
   </footer>
 
   <script>
-    // スプレッドシート連携設定（キャッシュ回避＆全件取得対応）
     const SHEET_KEY = ['1oHSo8Jl4R3IIPBtGxLwd', 'QAv5czD1WTRc0VMKvsyYtlU'].join('');
     const CSV_EXPORT_URL = `https://docs.google.com/spreadsheets/d/${SHEET_KEY}/export?format=csv&gid=0`;
     const GVIZ_JSON_URL = `https://docs.google.com/spreadsheets/d/${SHEET_KEY}/gviz/tq?tqx=out:json&gid=0`;
 
-    // 最新版バックアップデータ（全58件：「子供を利用した浸透工作」9件・「神社仏閣の火災・破壊」15件を含む完全データ）
     const FALLBACK_DATA = [
       { date: "2026/05/12", category: "祈祷室", region: "不明（空港）", media: "Facebook", author: "digitalspartanspk", summary: "空港内に設置されたポッド型の携帯祈祷室の画像", reaction: "3.8K", url: "https://www.facebook.com/digitalspartanspk/posts/pfbid02m8KFDq9mAG524SRBfKVwz22tAh7S1nXcrbisrZgVkAv6g257WsGQM4pXRcnqCt5Sl" },
       { date: "2026/05/12", category: "祈祷室", region: "不明", media: "Facebook", author: "ExplainThis92", summary: "「PRAYER SPACE」と表示された個室ブースの紹介", reaction: "1K", url: "https://www.facebook.com/ExplainThis92/posts/pfbid0ojMV7LrEXaYzBsoRtRemQPnNoQ1cWnDbVc752M7KNso1eR8HBXCtwbqWJotoWMpXl" },
@@ -257,33 +273,16 @@
     let allRecords = [];
     let currentViewMode = 'card';
 
-    // カテゴリごとのスタイル定義（新カテゴリ2種＆表記ゆれにも完全対応）
     function getCategoryStyle(category) {
       const cat = (category || '').trim();
-      if (cat === '祈祷室') {
-        return { badge: 'bg-sky-50 text-sky-700 border-sky-200', icon: '🕌' };
-      }
-      if (cat === 'トイレの水洗浄') {
-        return { badge: 'bg-cyan-50 text-cyan-700 border-cyan-200', icon: '🚰' };
-      }
-      if (cat === 'ハラール給食') {
-        return { badge: 'bg-amber-50 text-amber-800 border-amber-200', icon: '🍱' };
-      }
-      if (cat === '土葬') {
-        return { badge: 'bg-purple-50 text-purple-700 border-purple-200', icon: '🪦' };
-      }
-      if (cat === '介護・病院のヒジャブ') {
-        return { badge: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: '🏥' };
-      }
-      if (cat === 'ヒジャブ・ひげ容認の求人') {
-        return { badge: 'bg-rose-50 text-rose-700 border-rose-200', icon: '📋' };
-      }
-      if (cat.includes('子供') || cat.includes('子ども') || cat.includes('浸透工作')) {
-        return { badge: 'bg-orange-50 text-orange-800 border-orange-200', icon: '🧒' };
-      }
-      if (cat.includes('神社仏閣') || cat.includes('火災')) {
-        return { badge: 'bg-red-50 text-red-700 border-red-200', icon: '⛩️' };
-      }
+      if (cat === '祈祷室') return { badge: 'bg-sky-50 text-sky-700 border-sky-200', icon: '🕌' };
+      if (cat === 'トイレの水洗浄') return { badge: 'bg-cyan-50 text-cyan-700 border-cyan-200', icon: '🚰' };
+      if (cat === 'ハラール給食') return { badge: 'bg-amber-50 text-amber-800 border-amber-200', icon: '🍱' };
+      if (cat === '土葬') return { badge: 'bg-purple-50 text-purple-700 border-purple-200', icon: '🪦' };
+      if (cat === '介護・病院のヒジャブ') return { badge: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: '🏥' };
+      if (cat === 'ヒジャブ・ひげ容認の求人') return { badge: 'bg-rose-50 text-rose-700 border-rose-200', icon: '📋' };
+      if (cat.includes('子供') || cat.includes('子ども') || cat.includes('浸透工作')) return { badge: 'bg-orange-50 text-orange-800 border-orange-200', icon: '🧒' };
+      if (cat.includes('神社仏閣') || cat.includes('火災')) return { badge: 'bg-red-50 text-red-700 border-red-200', icon: '⛩️' };
       return { badge: 'bg-slate-100 text-slate-700 border-slate-200', icon: '📌' };
     }
 
@@ -299,7 +298,6 @@
       return styles[media] || 'bg-slate-50 text-slate-600 border-slate-200';
     }
 
-    // 反響から最大数値を抽出して並び替え可能にする
     function parseReactionScore(str) {
       if (!str) return 0;
       const s = str.toString().replace(/,/g, '');
@@ -317,7 +315,6 @@
       return maxVal;
     }
 
-    // CSVパーサー
     function parseCSVText(text) {
       const rows = [];
       let row = [];
@@ -359,12 +356,10 @@
       return rows;
     }
 
-    // スプレッドシートからデータを取得
     async function fetchSheetData() {
       const statusEl = document.getElementById('status-indicator');
       statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span> 同期中...`;
 
-      // 方法1: キャッシュ無効化つきCSVダイレクト取得
       try {
         const res = await fetch(`${CSV_EXPORT_URL}&_nocache=${Date.now()}`, { cache: 'no-store' });
         if (res.ok) {
@@ -397,7 +392,6 @@
         console.warn('Direct CSV fetch skipped:', e);
       }
 
-      // 方法2: JSONP方式（GVIZ）で取得
       window.google = window.google || {};
       window.google.visualization = window.google.visualization || {};
       window.google.visualization.Query = {
@@ -548,7 +542,6 @@
       return str.replace(/-/g, '/').trim();
     }
 
-    // 検索時の「子供 / 子ども」表記ゆれ吸収ヘルパー
     function normalizeForSearch(str) {
       if (!str) return '';
       return str.toLowerCase().replace(/子ども/g, '子供');
@@ -583,7 +576,6 @@
         return matchKeyword && matchCat && matchRegion && matchMedia && matchDate;
       });
 
-      // ソート処理
       filtered.sort((a, b) => {
         if (sortOrder === 'sheet_order') {
           return (a._index ?? 0) - (b._index ?? 0);
@@ -617,7 +609,6 @@
         const mediaClass = getMediaBadge(item.media);
         const dateDisplay = item.date ? `📅 ${escapeHtml(item.date)}` : '📅 日付記録なし';
 
-        // カード生成
         const card = document.createElement('article');
         card.className = 'bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5 flex flex-col justify-between card-hover';
         card.innerHTML = `
@@ -650,7 +641,6 @@
         `;
         cardContainer.appendChild(card);
 
-        // テーブル行生成
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 transition';
         tr.innerHTML = `

@@ -648,7 +648,7 @@
 
       filtered.sort((a, b) => {
         if (sortOrder === 'sheet_order') {
-          return (a._index ?? 0) - (b._index ?? 0);
+          return (b._index ?? 0) - (a._index ?? 0);
         }
         if (sortOrder === 'reaction_desc') {
           return parseReactionScore(b.reaction) - parseReactionScore(a.reaction);

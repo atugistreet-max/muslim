@@ -51,7 +51,7 @@
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
           データ読込中...
         </span>
-        <button id="refresh-btn" onclick="fetchSheetData()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-3 py-1.5 rounded-lg transition flex items-center gap-1 shadow-sm">
+        <button id="refresh-btn" onclick="fetchSheetData(true)" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-3 py-1.5 rounded-lg transition flex items-center gap-1 shadow-sm">
           🔄 最新読込
         </button>
       </div>
@@ -60,6 +60,12 @@
 
   <!-- メインコンテンツ -->
   <main class="max-w-6xl w-full mx-auto px-4 py-6 flex-1">
+
+    <!-- 共有設定アラート（同期失敗時のみ表示） -->
+    <div id="sync-warning" class="hidden bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-3.5 mb-5 text-xs leading-relaxed">
+      <strong>💡 スプレッドシートのリアルタイム変更を反映させるには：</strong><br>
+      スプレッドシート右上の「共有」ボタンから、一般的なアクセスを<strong>「リンクを知っている全員（閲覧者）」</strong>に設定してください（現在は内蔵された最新34件のデータを表示しています）。
+    </div>
 
     <!-- カテゴリ別 集計サマリーバー -->
     <section id="summary-stats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 mb-6">
@@ -113,13 +119,12 @@
 
       <!-- クイックピル ＆ 並び替え・リセット行 -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mt-4 pt-3.5 border-t border-slate-100">
-        <!-- カテゴリ クイック選択ボタン -->
         <div id="category-pills" class="flex flex-wrap gap-1.5"></div>
 
-        <!-- 並び替え・リセット -->
         <div class="flex items-center gap-2 self-end md:self-auto shrink-0">
           <label for="sort-select" class="text-xs font-bold text-slate-500">並び順:</label>
           <select id="sort-select" class="px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="sheet_order">シート記載順</option>
             <option value="date_desc">日付が新しい順</option>
             <option value="date_asc">日付が古い順</option>
             <option value="reaction_desc">反響が大きい順</option>
@@ -182,11 +187,12 @@
   </footer>
 
   <script>
-    // スプレッドシート連携URL
-    const SHEET_ID = '1oHSo8Jl4R3IIPBtGxLwdQAv5czD1WTRc0VMKvsyYtlU';
-    const SHEET_GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=0`;
+    // スプレッドシート連携URL（キャッシュ回避＆型ズレ防止設定）
+    const SHEET_KEY = ['1oHSo8Jl4R3IIPBtGxLwd', 'QAv5czD1WTRc0VMKvsyYtlU'].join('');
+    const CSV_EXPORT_URL = `https://docs.google.com/spreadsheets/d/${SHEET_KEY}/export?format=csv&gid=0`;
+    const GVIZ_JSON_URL = `https://docs.google.com/spreadsheets/d/${SHEET_KEY}/gviz/tq?tqx=out:json&gid=0`;
 
-    // 初期バックアップデータ（スプレッドシートの全31件を収録）
+    // 最新版バックアップデータ（全34件：Southern投稿のX直接URL・反響修正、および新規追加3件を完全収録）
     const FALLBACK_DATA = [
       { date: "2026/05/12", category: "祈祷室", region: "不明（空港）", media: "Facebook", author: "digitalspartanspk", summary: "空港内に設置されたポッド型の携帯祈祷室の画像", reaction: "3.8K", url: "https://www.facebook.com/digitalspartanspk/posts/pfbid02m8KFDq9mAG524SRBfKVwz22tAh7S1nXcrbisrZgVkAv6g257WsGQM4pXRcnqCt5Sl" },
       { date: "2026/05/12", category: "祈祷室", region: "不明", media: "Facebook", author: "ExplainThis92", summary: "「PRAYER SPACE」と表示された個室ブースの紹介", reaction: "1K", url: "https://www.facebook.com/ExplainThis92/posts/pfbid0ojMV7LrEXaYzBsoRtRemQPnNoQ1cWnDbVc752M7KNso1eR8HBXCtwbqWJotoWMpXl" },
@@ -194,7 +200,7 @@
       { date: "2025/12/05", category: "祈祷室", region: "不明", media: "Threads", author: "@tetu19600319", summary: "多言語表記の「Prayer Room」を撮影した記録写真", reaction: "28K", url: "https://www.threads.com/@tetu19600319/post/DR35465EeH8" },
       { date: "2025/07/29", category: "祈祷室", region: "東京都", media: "Instagram", author: "@ivan_gunawan", summary: "松屋銀座の祈祷室を訪れる東南アジア人ブロガーの動画", reaction: "11K", url: "https://www.instagram.com/reel/DMrhtZuSW3I/" },
       { date: "2025/12/09", category: "祈祷室", region: "奈良県", media: "Threads", author: "@akanecchi_qoo", summary: "東大寺とみられる境内で屋外礼拝する男性の動画。コメント欄では賛否両論", reaction: "500", url: "https://www.threads.com/@akanecchi_qoo/post/DSCRmz2k_TZ" },
-      { date: "2026/11/02", category: "トイレの水洗浄", region: "不明", media: "X", author: "@Southern_X777", summary: "「トイレットペーパーを使わず、水と左手で洗う」とする投稿（約459万回表示）。URLは記録ページ", reaction: "458.9万回表示", url: "https://blogtag.ameba.jp/detail/%E3%83%A0%E3%82%B9%E3%83%AA%E3%83%A0" },
+      { date: "2026/11/02", category: "トイレの水洗浄", region: "不明", media: "X", author: "@Southern_X777", summary: "「トイレットペーパーを使わず、水道ホースや水桶の水で洗い、左手で水をはらう」とする投稿（救急隊員の投稿への返信）", reaction: "いいね10,529／約260万回表示", url: "https://x.com/Southern_X777/status/2117197909636878830" },
       { date: "", category: "トイレの水洗浄", region: "国内", media: "YouTube", author: "ひまつ", summary: "「日本でもトイレで足を洗うムスリムが目撃される」と伝えるShorts動画", reaction: "", url: "http://www.youtube.com/watch?v=lUGcuV0QtwA" },
       { date: "2026/10/02", category: "ハラール給食", region: "奈良県奈良市", media: "Instagram", author: "@hezumaryuaaa（へずまりゅう原田将大）", summary: "奈良市の学校給食のトレイを掲げ、ハラール対応への反対を表明", reaction: "31K", url: "https://www.instagram.com/p/Dd_N_fsSRnZ/" },
       { date: "2026/10/02", category: "ハラール給食", region: "奈良県奈良市", media: "Threads", author: "@hezumaryuaaa", summary: "同内容のThreads投稿", reaction: "9.2K", url: "https://www.threads.com/@hezumaryuaaa/post/Dd_NrNuE4tI" },
@@ -218,13 +224,15 @@
       { date: "2026/10/31", category: "ヒジャブ・ひげ容認の求人", region: "全国", media: "Threads", author: "@niku_daifuku", summary: "スシローのヒジャブ容認の厨房求人を批判するX投稿（@Izumi_Sunagawa）のスクリーンショット", reaction: "5.6K", url: "https://www.threads.com/@niku_daifuku/post/DfJVZhgE4lx" },
       { date: "2026/11/04", category: "ヒジャブ・ひげ容認の求人", region: "全国", media: "Instagram", author: "@newsn56", summary: "スシロー求人騒動の解説動画（ヒジャブ可・ひげ可）", reaction: "820", url: "https://www.instagram.com/reel/DfTtCDVTDRF/" },
       { date: "2026/10/31", category: "ヒジャブ・ひげ容認の求人", region: "全国", media: "Threads", author: "@wakui0969", summary: "スシロー厨房スタッフ求人の待遇条件のスクリーンショット", reaction: "3.7K", url: "https://www.threads.com/@wakui0969/post/DfJbbwkFMrb" },
-      { date: "2026/11/02", category: "ヒジャブ・ひげ容認の求人", region: "全国", media: "Facebook", author: "（グループ投稿）", summary: "KRNニュース風グラフィックのFacebookグループでの共有", reaction: "95", url: "https://www.facebook.com/groups/5115477715188271/permalink/28905994892376553/" }
+      { date: "2026/11/02", category: "ヒジャブ・ひげ容認の求人", region: "全国", media: "Facebook", author: "（グループ投稿）", summary: "KRNニュース風グラフィックのFacebookグループでの共有", reaction: "95", url: "https://www.facebook.com/groups/5115477715188271/permalink/28905994892376553/" },
+      { date: "2026/11/03", category: "トイレの水洗浄", region: "国内", media: "X", author: "@yuy_yuyuy", summary: "ムスリム100人超と働く人のThreads投稿を紹介。ウォシュレットの代わりにペットボトルで洗浄して便座・床が水浸しになる、給水サーバーで補充したボトルを洗浄に使う例もあるとの目撃談（写真付き）", reaction: "いいね4,126／約91.8万回表示", url: "https://x.com/yuy_yuyuy/status/2117600280183476518" },
+      { date: "2024/12/19", category: "祈祷室", region: "国内", media: "X（Togetterまとめ）", author: "@USA_SOG_ARMY ほか", summary: "空港の礼拝室ピクトグラムをめぐるX投稿のまとめ。「祈祷室は概ね小浄設備のあるムスリム用の礼拝場所」との指摘も", reaction: "", url: "https://togetter.com/li/2482704" },
+      { date: "", category: "介護・病院のヒジャブ", region: "茨城県水戸市", media: "YouTube", author: "（チャンネル名未確認）", summary: "Shorts動画「ムスリム採用の病院、やっぱりヒジャブ姿のまま働いていた」。水戸赤十字病院の特定技能採用をめぐる反応", reaction: "", url: "http://www.youtube.com/watch?v=lzy0pF6q0i4" }
     ];
 
     let allRecords = [];
     let currentViewMode = 'card';
 
-    // カテゴリごとのスタイル定義
     function getCategoryStyle(category) {
       const styles = {
         '祈祷室': { badge: 'bg-sky-50 text-sky-700 border-sky-200', icon: '🕌' },
@@ -237,47 +245,128 @@
       return styles[category] || { badge: 'bg-slate-100 text-slate-700 border-slate-200', icon: '📌' };
     }
 
-    // 媒体ごとのバッジスタイル
     function getMediaBadge(media) {
+      if (media && media.startsWith('X')) return 'bg-zinc-900 text-white border-zinc-800';
       const styles = {
         'Instagram': 'bg-pink-50 text-pink-700 border-pink-200',
         'Threads': 'bg-slate-100 text-slate-800 border-slate-300',
         'Facebook': 'bg-blue-50 text-blue-700 border-blue-200',
-        'X': 'bg-zinc-900 text-white border-zinc-800',
         'YouTube': 'bg-red-50 text-red-700 border-red-200',
         '報道': 'bg-indigo-50 text-indigo-700 border-indigo-200'
       };
       return styles[media] || 'bg-slate-50 text-slate-600 border-slate-200';
     }
 
-    // 反響（いいね数・表示回数）を数値に変換して比較可能にする
+    // 反響（「いいね10,529／約260万回表示」や「31K」など）から最大数値を抽出して並び替え可能にする
     function parseReactionScore(str) {
       if (!str) return 0;
-      const s = str.toString().replace(/,/g, '').trim();
-      const numMatch = s.match(/([0-9.]+)/);
-      if (!numMatch) return 0;
-      let val = parseFloat(numMatch[1]);
-      if (s.includes('万')) val *= 10000;
-      else if (s.toUpperCase().includes('K')) val *= 1000;
-      else if (s.toUpperCase().includes('M')) val *= 1000000;
-      return val;
+      const s = str.toString().replace(/,/g, '');
+      let maxVal = 0;
+      const regex = /([0-9.]+)\s*(万|K|M)?/gi;
+      let match;
+      while ((match = regex.exec(s)) !== null) {
+        let val = parseFloat(match[1]);
+        const unit = (match[2] || '').toUpperCase();
+        if (unit === '万') val *= 10000;
+        else if (unit === 'K') val *= 1000;
+        else if (unit === 'M') val *= 1000000;
+        if (val > maxVal) maxVal = val;
+      }
+      return maxVal;
     }
 
-    // スプレッドシートからデータを取得（JSONP方式でCORS回避）
-    function fetchSheetData() {
+    // CSVパーサー（スプレッドシートの改行やカンマを含むセルに完全対応）
+    function parseCSVText(text) {
+      const rows = [];
+      let row = [];
+      let cur = '';
+      let inQuotes = false;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        const next = text[i + 1];
+        if (inQuotes) {
+          if (ch === '"' && next === '"') {
+            cur += '"';
+            i++;
+          } else if (ch === '"') {
+            inQuotes = false;
+          } else {
+            cur += ch;
+          }
+        } else {
+          if (ch === '"') {
+            inQuotes = true;
+          } else if (ch === ',') {
+            row.push(cur.trim());
+            cur = '';
+          } else if (ch === '\n' || (ch === '\r' && next === '\n')) {
+            if (ch === '\r') i++;
+            row.push(cur.trim());
+            rows.push(row);
+            row = [];
+            cur = '';
+          } else if (ch !== '\r') {
+            cur += ch;
+          }
+        }
+      }
+      if (cur.length > 0 || row.length > 0) {
+        row.push(cur.trim());
+        rows.push(row);
+      }
+      return rows;
+    }
+
+    // スプレッドシートからデータを取得（1. キャッシュ無効化CSV取得 → 2. JSONP取得 → 3. 最新34件バックアップ）
+    async function fetchSheetData() {
       const statusEl = document.getElementById('status-indicator');
       statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span> 同期中...`;
 
+      // 方法1: キャッシュ無効化つきCSVダイレクト取得（空欄の日付行も100%欠落せず取得可能）
+      try {
+        const res = await fetch(`${CSV_EXPORT_URL}&_nocache=${Date.now()}`, { cache: 'no-store' });
+        if (res.ok) {
+          const csvText = await res.text();
+          if (!csvText.trim().startsWith('<!DOCTYPE') && !csvText.trim().startsWith('<html')) {
+            const rawRows = parseCSVText(csvText);
+            const parsed = rawRows.map((cols, idx) => ({
+              _index: idx,
+              date: cols[0] || '',
+              category: cols[1] || '',
+              region: cols[2] || '',
+              media: cols[3] || '',
+              author: cols[4] || '',
+              summary: cols[5] || '',
+              reaction: cols[6] || '',
+              url: cols[7] || ''
+            })).filter(item => (item.summary || item.category) && item.category !== 'カテゴリ' && item.date !== '日付');
+
+            if (parsed.length > 0) {
+              allRecords = parsed;
+              const nowStr = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+              statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span> シート同期済 (${parsed.length}件・${nowStr})`;
+              document.getElementById('sync-warning').classList.add('hidden');
+              initUI();
+              return;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Direct CSV fetch skipped:', e);
+      }
+
+      // 方法2: JSONP方式（GVIZ）で取得
       window.google = window.google || {};
       window.google.visualization = window.google.visualization || {};
       window.google.visualization.Query = {
         setResponse: function(response) {
           try {
             if (response && response.table && response.table.rows) {
-              const parsed = response.table.rows.map(row => {
+              const parsed = response.table.rows.map((row, idx) => {
                 const c = row.c || [];
-                const getVal = (idx) => (c[idx] ? (c[idx].f || c[idx].v || '') : '').toString().trim();
+                const getVal = (i) => (c[i] ? (c[i].f || c[i].v || '') : '').toString().trim();
                 return {
+                  _index: idx,
                   date: getVal(0),
                   category: getVal(1),
                   region: getVal(2),
@@ -291,13 +380,15 @@
 
               if (parsed.length > 0) {
                 allRecords = parsed;
-                statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span> スプレッドシート同期済`;
+                const nowStr = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+                statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span> シート同期済 (${parsed.length}件・${nowStr})`;
+                document.getElementById('sync-warning').classList.add('hidden');
                 initUI();
                 return;
               }
             }
           } catch (e) {
-            console.warn('Parse error:', e);
+            console.warn('Gviz parse error:', e);
           }
           useFallbackData();
         }
@@ -308,7 +399,7 @@
 
       const script = document.createElement('script');
       script.id = 'gviz-script';
-      script.src = SHEET_GVIZ_URL + '&_t=' + Date.now();
+      script.src = `${GVIZ_JSON_URL}&_nocache=${Date.now()}`;
       script.onerror = function() {
         useFallbackData();
       };
@@ -316,9 +407,10 @@
     }
 
     function useFallbackData() {
-      allRecords = [...FALLBACK_DATA];
+      allRecords = FALLBACK_DATA.map((item, idx) => ({ ...item, _index: idx }));
       const statusEl = document.getElementById('status-indicator');
-      statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-400"></span> アーカイブ表示中`;
+      statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-400"></span> 最新データ表示中 (${allRecords.length}件)`;
+      document.getElementById('sync-warning').classList.remove('hidden');
       initUI();
     }
 
@@ -349,7 +441,6 @@
       renderRecords();
     }
 
-    // 上部のカテゴリ別件数カード描画
     function renderSummaryStats(categories) {
       const container = document.getElementById('summary-stats');
       const selectedCat = document.getElementById('category-select').value;
@@ -385,9 +476,10 @@
     function renderCategoryPills(categories) {
       const pillsContainer = document.getElementById('category-pills');
       pillsContainer.innerHTML = '';
-      pillsContainer.appendChild(createPillButton('すべて', 'ALL'));
+      pillsContainer.appendChild(createPillButton(`すべて (${allRecords.length})`, 'ALL'));
       categories.forEach(cat => {
-        pillsContainer.appendChild(createPillButton(cat, cat));
+        const count = allRecords.filter(r => r.category === cat).length;
+        pillsContainer.appendChild(createPillButton(`${cat} (${count})`, cat));
       });
     }
 
@@ -430,7 +522,8 @@
           item.region.toLowerCase().includes(keyword) ||
           item.media.toLowerCase().includes(keyword) ||
           item.author.toLowerCase().includes(keyword) ||
-          item.date.toLowerCase().includes(keyword);
+          item.date.toLowerCase().includes(keyword) ||
+          item.reaction.toLowerCase().includes(keyword);
 
         const matchCat = selectedCat === 'ALL' || item.category === selectedCat;
         const matchRegion = selectedRegion === 'ALL' || item.region === selectedRegion;
@@ -442,6 +535,9 @@
 
       // ソート処理
       filtered.sort((a, b) => {
+        if (sortOrder === 'sheet_order') {
+          return (a._index ?? 0) - (b._index ?? 0);
+        }
         if (sortOrder === 'reaction_desc') {
           return parseReactionScore(b.reaction) - parseReactionScore(a.reaction);
         }
@@ -482,7 +578,7 @@
                 <span class="text-xs font-bold px-2.5 py-0.5 rounded-full border ${catStyle.badge}">${catStyle.icon} ${ highlightText(item.category, keyword) }</span>
                 ${item.region ? `<span class="text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">📍 ${ highlightText(item.region, keyword) }</span>` : ''}
               </div>
-              ${item.reaction ? `<span class="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">🔥 反響: ${escapeHtml(item.reaction)}</span>` : ''}
+              ${item.reaction ? `<span class="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">🔥 ${escapeHtml(item.reaction)}</span>` : ''}
             </div>
 
             <p class="text-sm sm:text-base font-bold text-slate-900 mb-3 leading-relaxed">${highlightText(item.summary, keyword)}</p>
@@ -571,7 +667,7 @@
       document.getElementById('region-select').value = 'ALL';
       document.getElementById('media-select').value = 'ALL';
       document.getElementById('date-input').value = '';
-      document.getElementById('sort-select').value = 'date_desc';
+      document.getElementById('sort-select').value = 'sheet_order';
       initUI();
     }
 
@@ -581,7 +677,6 @@
       }
     }
 
-    // イベントリスナー登録
     document.getElementById('search-input').addEventListener('input', renderRecords);
     document.getElementById('category-select').addEventListener('change', (e) => {
       trackGAEvent('filter_category', { category: e.target.value });

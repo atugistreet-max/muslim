@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ムスリム問題ウォッチ アーカイブ</title>
+
+  <!-- Google tag (gtag.js) - 健康管理アプリと同じGA4測定ID -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZKVVRD15VN"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    const GA_MEASUREMENT_ID = 'G-ZKVVRD15VN';
+    gtag('config', GA_MEASUREMENT_ID, {
+      'app_name': 'ムスリム問題ウォッチ アーカイブ'
+    });
+  </script>
+
+  <!-- Tailwind CSS & Google Fonts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background-color: #f8fafc;
+    }
+    .card-hover {
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .card-hover:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+    }
+  </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+  <!-- ヘッダー -->
+  <header class="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white shadow-md sticky top-0 z-20">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <div>
+        <h1 class="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2">
+          <span>🔍</span> ムスリム問題ウォッチ アーカイブ
+        </h1>
+        <p class="text-xs sm:text-sm text-slate-300 mt-0.5">国内各地の動向・SNS投稿・報道記録のデータベース</p>
+      </div>
+      <div class="flex items-center gap-2 self-end sm:self-auto">
+        <span id="status-indicator" class="text-xs bg-slate-700/90 text-slate-200 px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-slate-600">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          データ読込中...
+        </span>
+        <button id="refresh-btn" onclick="fetchSheetData()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-3 py-1.5 rounded-lg transition flex items-center gap-1 shadow-sm">
+          🔄 最新読込
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="max-w-6xl w-full mx-auto px-4 py-6 flex-1">
+
+    <!-- カテゴリ別 集計サマリーバー -->
+    <section id="summary-stats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 mb-6">
+      <!-- JSで動的生成 -->
+    </section>
+
+    <!-- 検索・フィルターパネル -->
+    <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5 mb-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3.5">
+        
+        <!-- キーワード検索 -->
+        <div class="sm:col-span-2 lg:col-span-4">
+          <label for="search-input" class="block text-xs font-bold text-slate-600 mb-1">🔍 キーワード検索（見出し・投稿者・地域）</label>
+          <div class="relative">
+            <input type="text" id="search-input" placeholder="例：給食、土葬、奈良、スシロー、病院..." 
+              class="w-full pl-3 pr-8 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+            <button id="clear-search" onclick="clearSearch()" class="hidden absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 text-sm">✕</button>
+          </div>
+        </div>
+
+        <!-- カテゴリ（項目）絞り込み -->
+        <div class="lg:col-span-2">
+          <label for="category-select" class="block text-xs font-bold text-slate-600 mb-1">🏷️ カテゴリ（項目）</label>
+          <select id="category-select" class="w-full px-2.5 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="ALL">すべての項目</option>
+          </select>
+        </div>
+
+        <!-- 地域絞り込み -->
+        <div class="lg:col-span-2">
+          <label for="region-select" class="block text-xs font-bold text-slate-600 mb-1">📍 地域</label>
+          <select id="region-select" class="w-full px-2.5 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="ALL">すべての地域</option>
+          </select>
+        </div>
+
+        <!-- 媒体絞り込み -->
+        <div class="lg:col-span-2">
+          <label for="media-select" class="block text-xs font-bold text-slate-600 mb-1">📱 媒体</label>
+          <select id="media-select" class="w-full px-2.5 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="ALL">すべての媒体</option>
+          </select>
+        </div>
+
+        <!-- 日付指定 -->
+        <div class="lg:col-span-2">
+          <label for="date-input" class="block text-xs font-bold text-slate-600 mb-1">📅 日付・年月検索</label>
+          <input type="date" id="date-input" class="w-full px-2.5 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+      </div>
+
+      <!-- クイックピル ＆ 並び替え・リセット行 -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mt-4 pt-3.5 border-t border-slate-100">
+        <!-- カテゴリ クイック選択ボタン -->
+        <div id="category-pills" class="flex flex-wrap gap-1.5"></div>
+
+        <!-- 並び替え・リセット -->
+        <div class="flex items-center gap-2 self-end md:self-auto shrink-0">
+          <label for="sort-select" class="text-xs font-bold text-slate-500">並び順:</label>
+          <select id="sort-select" class="px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="date_desc">日付が新しい順</option>
+            <option value="date_asc">日付が古い順</option>
+            <option value="reaction_desc">反響が大きい順</option>
+          </select>
+          <button onclick="resetFilters()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition">
+            条件リセット
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 件数・表示モード切替バー -->
+    <div class="flex items-center justify-between mb-4 px-1">
+      <div class="text-sm text-slate-600">
+        表示件数: <span id="result-count" class="font-bold text-slate-900 text-base">0</span> 件
+        <span id="total-count" class="text-xs text-slate-400"></span>
+      </div>
+      <div class="flex gap-1.5">
+        <button onclick="setViewMode('card')" id="view-card-btn" class="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold shadow-sm transition">
+          🗂️ カード表示
+        </button>
+        <button onclick="setViewMode('table')" id="view-table-btn" class="text-xs px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 transition">
+          📋 一覧表
+        </button>
+      </div>
+    </div>
+
+    <!-- コンテンツ表示エリア（カード表示） -->
+    <div id="archive-container-card" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+
+    <!-- コンテンツ表示エリア（テーブル表示） -->
+    <div id="archive-container-table" class="hidden bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+      <table class="w-full text-left border-collapse text-sm">
+        <thead>
+          <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 text-xs">
+            <th class="py-3 px-3 whitespace-nowrap">日付</th>
+            <th class="py-3 px-3 whitespace-nowrap">カテゴリ</th>
+            <th class="py-3 px-3 whitespace-nowrap">地域</th>
+            <th class="py-3 px-3 whitespace-nowrap">媒体 / 投稿者</th>
+            <th class="py-3 px-4 min-w-[260px]">見出し・要点</th>
+            <th class="py-3 px-3 whitespace-nowrap text-right">反響</th>
+            <th class="py-3 px-3 whitespace-nowrap text-center">リンク</th>
+          </tr>
+        </thead>
+        <tbody id="archive-table-body" class="divide-y divide-slate-200"></tbody>
+      </table>
+    </div>
+
+    <!-- 検索結果ゼロの表示 -->
+    <div id="empty-state" class="hidden bg-white rounded-xl border border-slate-200 p-10 text-center my-4">
+      <p class="text-slate-500 font-medium">条件に一致する記録が見つかりませんでした。</p>
+      <button onclick="resetFilters()" class="mt-3 text-sm text-indigo-600 hover:underline font-bold">検索条件をすべて解除する</button>
+    </div>
+
+  </main>
+
+  <!-- フッター -->
+  <footer class="bg-white border-t border-slate-200 mt-12 py-4 text-center text-xs text-slate-400">
+    ムスリム問題ウォッチ アーカイブ | Google Analytics 4 (G-ZKVVRD15VN) 連携
+  </footer>
+
+  <script>
+    // スプレッドシート連携URL
+    const SHEET_ID = '1oHSo8Jl4R3IIPBtGxLwdQAv5czD1WTRc0VMKvsyYtlU';
+    const SHEET_GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=0`;
+
+    // 初期バックアップデータ（スプレッドシートの全31件を収録）
+    const FALLBACK_DATA = [
+      { date: "2026/05/12", category: "祈祷室", region: "不明（空港）", media: "Facebook", author: "digitalspartanspk", summary: "空港内に設置されたポッド型の携帯祈祷室の画像", reaction: "3.8K", url: "https://www.facebook.com/digitalspartanspk/posts/pfbid02m8KFDq9mAG524SRBfKVwz22tAh7S1nXcrbisrZgVkAv6g257WsGQM4pXRcnqCt5Sl" },
+      { date: "2026/05/12", category: "祈祷室", region: "不明", media: "Facebook", author: "ExplainThis92", summary: "「PRAYER SPACE」と表示された個室ブースの紹介", reaction: "1K", url: "https://www.facebook.com/ExplainThis92/posts/pfbid0ojMV7LrEXaYzBsoRtRemQPnNoQ1cWnDbVc752M7KNso1eR8HBXCtwbqWJotoWMpXl" },
+      { date: "2026/05/16", category: "祈祷室", region: "国内", media: "Facebook", author: "ErMuheetFayaz", summary: "日本で開発されたプレハブ式祈祷室を紹介するグラフィック", reaction: "1.9K", url: "https://www.facebook.com/ErMuheetFayaz/posts/pfbid02bYKvoHSEfjus2AKSZ8moVdmkCoLgZNKXnVdHpb4ecW6xx8ANsG52XuEdUHRTQQtvl" },
+      { date: "2025/12/05", category: "祈祷室", region: "不明", media: "Threads", author: "@tetu19600319", summary: "多言語表記の「Prayer Room」を撮影した記録写真", reaction: "28K", url: "https://www.threads.com/@tetu19600319/post/DR35465EeH8" },
+      { date: "2025/07/29", category: "祈祷室", region: "東京都", media: "Instagram", author: "@ivan_gunawan", summary: "松屋銀座の祈祷室を訪れる東南アジア人ブロガーの動画", reaction: "11K", url: "https://www.instagram.com/reel/DMrhtZuSW3I/" },
+      { date: "2025/12/09", category: "祈祷室", region: "奈良県", media: "Threads", author: "@akanecchi_qoo", summary: "東大寺とみられる境内で屋外礼拝する男性の動画。コメント欄では賛否両論", reaction: "500", url: "https://www.threads.com/@akanecchi_qoo/post/DSCRmz2k_TZ" },
+      { date: "2026/11/02", category: "トイレの水洗浄", region: "不明", media: "X", author: "@Southern_X777", summary: "「トイレットペーパーを使わず、水と左手で洗う」とする投稿（約459万回表示）。URLは記録ページ", reaction: "458.9万回表示", url: "https://blogtag.ameba.jp/detail/%E3%83%A0%E3%82%B9%E3%83%AA%E3%83%A0" },
+      { date: "", category: "トイレの水洗浄", region: "国内", media: "YouTube", author: "ひまつ", summary: "「日本でもトイレで足を洗うムスリムが目撃される」と伝えるShorts動画", reaction: "", url: "http://www.youtube.com/watch?v=lUGcuV0QtwA" },
+      { date: "2026/10/02", category: "ハラール給食", region: "奈良県奈良市", media: "Instagram", author: "@hezumaryuaaa（へずまりゅう原田将大）", summary: "奈良市の学校給食のトレイを掲げ、ハラール対応への反対を表明", reaction: "31K", url: "https://www.instagram.com/p/Dd_N_fsSRnZ/" },
+      { date: "2026/10/02", category: "ハラール給食", region: "奈良県奈良市", media: "Threads", author: "@hezumaryuaaa", summary: "同内容のThreads投稿", reaction: "9.2K", url: "https://www.threads.com/@hezumaryuaaa/post/Dd_NrNuE4tI" },
+      { date: "2026/10/04", category: "ハラール給食", region: "奈良県奈良市", media: "Instagram", author: "@sansei121212", summary: "へずま議員の奈良市役所への視察・提案を伝えるインフォグラフィック", reaction: "5.6K", url: "https://www.instagram.com/p/DeFf1XxzWUv/" },
+      { date: "2026/05/07", category: "ハラール給食", region: "新潟県南魚沼市", media: "Threads", author: "@songxiaf", summary: "南魚沼市の調査でハラール給食は対応困難と結論。当面はムスリム児童は弁当持参", reaction: "15K", url: "https://www.threads.com/@songxiaf/post/DYCRlDrEVFe" },
+      { date: "2026/10/24", category: "ハラール給食", region: "不明", media: "Instagram", author: "@amatsuuni", summary: "ハラール対応を試みた小学校に自治体が難色を示した件のニュース解説", reaction: "24K", url: "https://www.instagram.com/reel/De22gGsOd-l/" },
+      { date: "2026/09/14", category: "ハラール給食", region: "不明", media: "Instagram", author: "@idono_medaka", summary: "「学校給食とハラール対応 どこまで配慮すべき？」の議論グラフィック", reaction: "190", url: "https://www.instagram.com/p/DdSMPwvy3As/" },
+      { date: "2025/09/29", category: "ハラール給食", region: "福岡県北九州市", media: "報道", author: "J-CASTニュース", summary: "【報道】北九州市で2023年にハラール給食を求める陳情（不採択）。2025年9月「ムスリム給食が決定」との情報がSNSで拡散し、市に抗議1,000件超。市教委は否定", reaction: "", url: "https://www.j-cast.com/2025/09/29507916.html" },
+      { date: "2025/10/12", category: "ハラール給食", region: "茨城県境町・五霞町", media: "報道", author: "産経新聞", summary: "【報道】境町・五霞町が2024年9月にハラール対応給食を1日のみ提供（ムスリム児童生徒は両町計39人）。「日本の子供が不公平」などの抗議が寄せられた", reaction: "", url: "https://www.sankei.com/article/20251012-4EGZBMW5GJIZPJHZEFCQ7NZ5QQ/" },
+      { date: "2026/01/09", category: "土葬", region: "不明", media: "Instagram", author: "@kgo_takasaki", summary: "ANNニュース「郷に入っては郷に従えない」（火葬は罪と主張する男性）への論評", reaction: "31K", url: "https://www.instagram.com/reel/DTRkZiXCuuK/" },
+      { date: "2026/07/23", category: "土葬", region: "不明", media: "Instagram", author: "@ganbarushigeo", summary: "「日本で土葬したいムスリム」モスクでのインタビュー動画", reaction: "4.9K", url: "https://www.instagram.com/reel/DbIQvLUzHj4/" },
+      { date: "2026/07/22", category: "土葬", region: "国内", media: "Facebook", author: "（投稿者名は記録なし）", summary: "日本の霊園で遺体を墓穴に下ろす様子の写真。背後に寺院が見える", reaction: "1.5K", url: "https://www.facebook.com/permalink.php?story_fbid=pfbid0wvrZGzc4VBXbQMsZitAEuJ2iQDzYMb5dw7WsWZqjuHxm6iF9zMEK4mpTkrPyxmK6l&id=100064067799188" },
+      { date: "2026/10/25", category: "土葬", region: "広島県三原市", media: "Instagram", author: "@newsn56", summary: "三原市の霊園が2021年からムスリムの土葬を受け入れているとの新聞記事（2025-04-13）の紹介", reaction: "3.9K", url: "https://www.instagram.com/p/De5e4N0zTjJ/" },
+      { date: "2025/11/26", category: "土葬", region: "大分県", media: "Instagram", author: "@nippon_sentinel", summary: "大分県の土葬をめぐる政治的動きを伝えるニュース風動画", reaction: "1.5K", url: "https://www.instagram.com/reel/DRgONa4ElMF/" },
+      { date: "2025/12/04", category: "土葬", region: "全国", media: "Instagram", author: "@idono_medaka", summary: "岩屋毅元外相らが署名した、土葬に関する厚生労働省への要望書の紹介", reaction: "6.3K", url: "https://www.instagram.com/reel/DR1g3MzEsak/" },
+      { date: "2026/04/18", category: "土葬", region: "大分県日出町", media: "Instagram", author: "@yamatospirit_official_jp", summary: "日出町近郊に計画されるイスラム教徒向け墓地の検証動画", reaction: "3.3K", url: "https://www.instagram.com/reel/DXQ3E4rElcn/" },
+      { date: "2025/09/18", category: "土葬", region: "宮城県", media: "報道", author: "テレビ朝日ニュース", summary: "【報道】宮城県の村井知事が土葬墓地の検討撤回を表明（9月18日県議会）。許可権限を持つ県内全市町村から難色を示されたため", reaction: "", url: "https://news.tv-asahi.co.jp/news_society/articles/000454091.html" },
+      { date: "2026/11/02", category: "介護・病院のヒジャブ", region: "茨城県水戸市", media: "Threads", author: "@manami.lll", summary: "水戸赤十字病院が特定技能の介護人材としてヒジャブ姿のインドネシア人女性10人を初採用（茨城新聞の報道）", reaction: "23K", url: "https://www.threads.com/@manami.lll/post/DfOf4xTkyUC" },
+      { date: "2026/11/02", category: "介護・病院のヒジャブ", region: "茨城県水戸市", media: "Facebook", author: "茨城新聞", summary: "同上。水戸赤十字病院の特定技能介護人材採用の報道リール", reaction: "480", url: "https://www.facebook.com/reel/1640394664130952/" },
+      { date: "2026/11/01", category: "ヒジャブ・ひげ容認の求人", region: "全国", media: "Instagram", author: "@kirianman", summary: "ヒジャブ姿の女性とひげの男性が厨房に立つスシロー求人チラシの画像（KRNニュース風グラフィック）", reaction: "2.5K", url: "https://www.instagram.com/p/DfNL_LEi75Y/" },
+      { date: "2026/10/31", category: "ヒジャブ・ひげ容認の求人", region: "全国", media: "Threads", author: "@niku_daifuku", summary: "スシローのヒジャブ容認の厨房求人を批判するX投稿（@Izumi_Sunagawa）のスクリーンショット", reaction: "5.6K", url: "https://www.threads.com/@niku_daifuku/post/DfJVZhgE4lx" },
+      { date: "2026/11/04", category: "ヒジャブ・ひげ容認の求人", region: "全国", media: "Instagram", author: "@newsn56", summary: "スシロー求人騒動の解説動画（ヒジャブ可・ひげ可）", reaction: "820", url: "https://www.instagram.com/reel/DfTtCDVTDRF/" },
+      { date: "2026/10/31", category: "ヒジャブ・ひげ容認の求人", region: "全国", media: "Threads", author: "@wakui0969", summary: "スシロー厨房スタッフ求人の待遇条件のスクリーンショット", reaction: "3.7K", url: "https://www.threads.com/@wakui0969/post/DfJbbwkFMrb" },
+      { date: "2026/11/02", category: "ヒジャブ・ひげ容認の求人", region: "全国", media: "Facebook", author: "（グループ投稿）", summary: "KRNニュース風グラフィックのFacebookグループでの共有", reaction: "95", url: "https://www.facebook.com/groups/5115477715188271/permalink/28905994892376553/" }
+    ];
+
+    let allRecords = [];
+    let currentViewMode = 'card';
+
+    // カテゴリごとのスタイル定義
+    function getCategoryStyle(category) {
+      const styles = {
+        '祈祷室': { badge: 'bg-sky-50 text-sky-700 border-sky-200', icon: '🕌' },
+        'トイレの水洗浄': { badge: 'bg-cyan-50 text-cyan-700 border-cyan-200', icon: '🚰' },
+        'ハラール給食': { badge: 'bg-amber-50 text-amber-800 border-amber-200', icon: '🍱' },
+        '土葬': { badge: 'bg-purple-50 text-purple-700 border-purple-200', icon: '🪦' },
+        '介護・病院のヒジャブ': { badge: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: '🏥' },
+        'ヒジャブ・ひげ容認の求人': { badge: 'bg-rose-50 text-rose-700 border-rose-200', icon: '📋' }
+      };
+      return styles[category] || { badge: 'bg-slate-100 text-slate-700 border-slate-200', icon: '📌' };
+    }
+
+    // 媒体ごとのバッジスタイル
+    function getMediaBadge(media) {
+      const styles = {
+        'Instagram': 'bg-pink-50 text-pink-700 border-pink-200',
+        'Threads': 'bg-slate-100 text-slate-800 border-slate-300',
+        'Facebook': 'bg-blue-50 text-blue-700 border-blue-200',
+        'X': 'bg-zinc-900 text-white border-zinc-800',
+        'YouTube': 'bg-red-50 text-red-700 border-red-200',
+        '報道': 'bg-indigo-50 text-indigo-700 border-indigo-200'
+      };
+      return styles[media] || 'bg-slate-50 text-slate-600 border-slate-200';
+    }
+
+    // 反響（いいね数・表示回数）を数値に変換して比較可能にする
+    function parseReactionScore(str) {
+      if (!str) return 0;
+      const s = str.toString().replace(/,/g, '').trim();
+      const numMatch = s.match(/([0-9.]+)/);
+      if (!numMatch) return 0;
+      let val = parseFloat(numMatch[1]);
+      if (s.includes('万')) val *= 10000;
+      else if (s.toUpperCase().includes('K')) val *= 1000;
+      else if (s.toUpperCase().includes('M')) val *= 1000000;
+      return val;
+    }
+
+    // スプレッドシートからデータを取得（JSONP方式でCORS回避）
+    function fetchSheetData() {
+      const statusEl = document.getElementById('status-indicator');
+      statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span> 同期中...`;
+
+      window.google = window.google || {};
+      window.google.visualization = window.google.visualization || {};
+      window.google.visualization.Query = {
+        setResponse: function(response) {
+          try {
+            if (response && response.table && response.table.rows) {
+              const parsed = response.table.rows.map(row => {
+                const c = row.c || [];
+                const getVal = (idx) => (c[idx] ? (c[idx].f || c[idx].v || '') : '').toString().trim();
+                return {
+                  date: getVal(0),
+                  category: getVal(1),
+                  region: getVal(2),
+                  media: getVal(3),
+                  author: getVal(4),
+                  summary: getVal(5),
+                  reaction: getVal(6),
+                  url: getVal(7)
+                };
+              }).filter(item => (item.summary || item.category) && item.category !== 'カテゴリ' && item.date !== '日付');
+
+              if (parsed.length > 0) {
+                allRecords = parsed;
+                statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span> スプレッドシート同期済`;
+                initUI();
+                return;
+              }
+            }
+          } catch (e) {
+            console.warn('Parse error:', e);
+          }
+          useFallbackData();
+        }
+      };
+
+      const oldScript = document.getElementById('gviz-script');
+      if (oldScript) oldScript.remove();
+
+      const script = document.createElement('script');
+      script.id = 'gviz-script';
+      script.src = SHEET_GVIZ_URL + '&_t=' + Date.now();
+      script.onerror = function() {
+        useFallbackData();
+      };
+      document.body.appendChild(script);
+    }
+
+    function useFallbackData() {
+      allRecords = [...FALLBACK_DATA];
+      const statusEl = document.getElementById('status-indicator');
+      statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-400"></span> アーカイブ表示中`;
+      initUI();
+    }
+
+    function populateSelect(selectId, items, defaultLabel) {
+      const selectEl = document.getElementById(selectId);
+      const currentVal = selectEl.value;
+      selectEl.innerHTML = `<option value="ALL">${defaultLabel}</option>`;
+      items.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item;
+        opt.textContent = item;
+        selectEl.appendChild(opt);
+      });
+      if (items.includes(currentVal)) selectEl.value = currentVal;
+    }
+
+    function initUI() {
+      const categories = [...new Set(allRecords.map(r => r.category).filter(Boolean))];
+      const regions = [...new Set(allRecords.map(r => r.region).filter(Boolean))];
+      const medias = [...new Set(allRecords.map(r => r.media).filter(Boolean))];
+
+      populateSelect('category-select', categories, 'すべての項目');
+      populateSelect('region-select', regions, 'すべての地域');
+      populateSelect('media-select', medias, 'すべての媒体');
+
+      renderSummaryStats(categories);
+      renderCategoryPills(categories);
+      renderRecords();
+    }
+
+    // 上部のカテゴリ別件数カード描画
+    function renderSummaryStats(categories) {
+      const container = document.getElementById('summary-stats');
+      const selectedCat = document.getElementById('category-select').value;
+
+      container.innerHTML = categories.map(cat => {
+        const count = allRecords.filter(r => r.category === cat).length;
+        const style = getCategoryStyle(cat);
+        const isActive = selectedCat === cat;
+        return `
+          <button onclick="selectCategoryQuick('${escapeHtml(cat)}')" 
+            class="text-left p-3 rounded-xl border transition flex flex-col justify-between ${
+              isActive 
+                ? 'bg-indigo-50/90 border-indigo-500 ring-2 ring-indigo-500/20 shadow-sm' 
+                : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/60 shadow-sm'
+            }">
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="text-base">${style.icon}</span>
+              <span class="text-xs font-bold px-2 py-0.5 rounded-full ${ isActive ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700' }">${count}件</span>
+            </div>
+            <div class="text-xs font-bold text-slate-800 line-clamp-1">${escapeHtml(cat)}</div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function selectCategoryQuick(cat) {
+      const selectEl = document.getElementById('category-select');
+      selectEl.value = (selectEl.value === cat) ? 'ALL' : cat;
+      trackGAEvent('filter_category', { category: selectEl.value });
+      initUI();
+    }
+
+    function renderCategoryPills(categories) {
+      const pillsContainer = document.getElementById('category-pills');
+      pillsContainer.innerHTML = '';
+      pillsContainer.appendChild(createPillButton('すべて', 'ALL'));
+      categories.forEach(cat => {
+        pillsContainer.appendChild(createPillButton(cat, cat));
+      });
+    }
+
+    function createPillButton(label, value) {
+      const btn = document.createElement('button');
+      const isSelected = document.getElementById('category-select').value === value;
+      btn.className = `text-xs px-3 py-1 rounded-full border transition font-bold ${
+        isSelected 
+          ? 'bg-slate-800 text-white border-slate-800 shadow-sm' 
+          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+      }`;
+      btn.textContent = label;
+      btn.onclick = () => {
+        document.getElementById('category-select').value = value;
+        trackGAEvent('filter_category', { category: value });
+        initUI();
+      };
+      return btn;
+    }
+
+    function normalizeDate(str) {
+      if (!str) return '';
+      return str.replace(/-/g, '/').trim();
+    }
+
+    function renderRecords() {
+      const keyword = document.getElementById('search-input').value.trim().toLowerCase();
+      const selectedCat = document.getElementById('category-select').value;
+      const selectedRegion = document.getElementById('region-select').value;
+      const selectedMedia = document.getElementById('media-select').value;
+      const selectedDate = normalizeDate(document.getElementById('date-input').value);
+      const sortOrder = document.getElementById('sort-select').value;
+
+      document.getElementById('clear-search').classList.toggle('hidden', !keyword);
+
+      let filtered = allRecords.filter(item => {
+        const matchKeyword = !keyword || 
+          item.summary.toLowerCase().includes(keyword) ||
+          item.category.toLowerCase().includes(keyword) ||
+          item.region.toLowerCase().includes(keyword) ||
+          item.media.toLowerCase().includes(keyword) ||
+          item.author.toLowerCase().includes(keyword) ||
+          item.date.toLowerCase().includes(keyword);
+
+        const matchCat = selectedCat === 'ALL' || item.category === selectedCat;
+        const matchRegion = selectedRegion === 'ALL' || item.region === selectedRegion;
+        const matchMedia = selectedMedia === 'ALL' || item.media === selectedMedia;
+        const matchDate = !selectedDate || normalizeDate(item.date) === selectedDate;
+
+        return matchKeyword && matchCat && matchRegion && matchMedia && matchDate;
+      });
+
+      // ソート処理
+      filtered.sort((a, b) => {
+        if (sortOrder === 'reaction_desc') {
+          return parseReactionScore(b.reaction) - parseReactionScore(a.reaction);
+        }
+        const dateA = normalizeDate(a.date) || '0000/00/00';
+        const dateB = normalizeDate(b.date) || '0000/00/00';
+        return sortOrder === 'date_desc' ? dateB.localeCompare(dateA) : dateA.localeCompare(dateB);
+      });
+
+      document.getElementById('result-count').textContent = filtered.length;
+      document.getElementById('total-count').textContent = `（全 ${allRecords.length} 件中）`;
+
+      const cardContainer = document.getElementById('archive-container-card');
+      const tableBody = document.getElementById('archive-table-body');
+      const emptyState = document.getElementById('empty-state');
+
+      cardContainer.innerHTML = '';
+      tableBody.innerHTML = '';
+
+      if (filtered.length === 0) {
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      emptyState.classList.add('hidden');
+
+      filtered.forEach(item => {
+        const catStyle = getCategoryStyle(item.category);
+        const mediaClass = getMediaBadge(item.media);
+        const dateDisplay = item.date ? `📅 ${escapeHtml(item.date)}` : '📅 日付記録なし';
+
+        // カード生成
+        const card = document.createElement('article');
+        card.className = 'bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5 flex flex-col justify-between card-hover';
+        card.innerHTML = `
+          <div>
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <span class="text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded">${dateDisplay}</span>
+                <span class="text-xs font-bold px-2.5 py-0.5 rounded-full border ${catStyle.badge}">${catStyle.icon} ${ highlightText(item.category, keyword) }</span>
+                ${item.region ? `<span class="text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">📍 ${ highlightText(item.region, keyword) }</span>` : ''}
+              </div>
+              ${item.reaction ? `<span class="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">🔥 反響: ${escapeHtml(item.reaction)}</span>` : ''}
+            </div>
+
+            <p class="text-sm sm:text-base font-bold text-slate-900 mb-3 leading-relaxed">${highlightText(item.summary, keyword)}</p>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100 mt-2">
+            <div class="flex items-center gap-2 text-xs text-slate-600">
+              <span class="font-bold px-2 py-0.5 rounded border ${mediaClass}">${highlightText(item.media || '不明', keyword)}</span>
+              <span class="font-medium text-slate-700 truncate max-w-[200px]" title="${escapeHtml(item.author)}">👤 ${highlightText(item.author || '記録なし', keyword)}</span>
+            </div>
+            ${item.url ? `
+              <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" 
+                onclick="trackGAEvent('click_source_url', { category: '${escapeHtml(item.category)}', media: '${escapeHtml(item.media)}' })"
+                class="text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+                元投稿・記事を見る ↗
+              </a>
+            ` : '<span class="text-xs text-slate-400">リンクなし</span>'}
+          </div>
+        `;
+        cardContainer.appendChild(card);
+
+        // テーブル行生成
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition';
+        tr.innerHTML = `
+          <td class="py-3 px-3 whitespace-nowrap text-slate-600 font-medium text-xs">${escapeHtml(item.date || '-')}</td>
+          <td class="py-3 px-3 whitespace-nowrap">
+            <span class="text-xs font-bold px-2 py-0.5 rounded-full border ${catStyle.badge}">${catStyle.icon} ${highlightText(item.category, keyword)}</span>
+          </td>
+          <td class="py-3 px-3 whitespace-nowrap text-xs font-medium text-slate-700">${highlightText(item.region || '-', keyword)}</td>
+          <td class="py-3 px-3 whitespace-nowrap text-xs">
+            <span class="font-bold px-1.5 py-0.5 rounded border ${mediaClass} mr-1">${highlightText(item.media, keyword)}</span>
+            <span class="text-slate-600">${highlightText(item.author, keyword)}</span>
+          </td>
+          <td class="py-3 px-4 font-bold text-slate-800 text-xs sm:text-sm leading-relaxed">${highlightText(item.summary, keyword)}</td>
+          <td class="py-3 px-3 whitespace-nowrap text-right text-xs font-bold text-amber-700">${escapeHtml(item.reaction || '-')}</td>
+          <td class="py-3 px-3 whitespace-nowrap text-center">
+            ${item.url ? `
+              <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer"
+                onclick="trackGAEvent('click_source_url', { category: '${escapeHtml(item.category)}', media: '${escapeHtml(item.media)}' })"
+                class="text-xs font-bold text-indigo-600 hover:underline">開く ↗</a>
+            ` : '-'}
+          </td>
+        `;
+        tableBody.appendChild(tr);
+      });
+    }
+
+    function highlightText(text, keyword) {
+      const safeText = escapeHtml(text);
+      if (!keyword) return safeText;
+      const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+      return safeText.replace(regex, '<mark class="bg-yellow-200 text-slate-900 rounded px-0.5">$1</mark>');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[m]));
+    }
+
+    function setViewMode(mode) {
+      currentViewMode = mode;
+      document.getElementById('archive-container-card').classList.toggle('hidden', mode !== 'card');
+      document.getElementById('archive-container-table').classList.toggle('hidden', mode !== 'table');
+      
+      document.getElementById('view-card-btn').className = mode === 'card'
+        ? 'text-xs px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold shadow-sm transition'
+        : 'text-xs px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 transition';
+      document.getElementById('view-table-btn').className = mode === 'table'
+        ? 'text-xs px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold shadow-sm transition'
+        : 'text-xs px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 transition';
+
+      trackGAEvent('change_view_mode', { view_mode: mode });
+    }
+
+    function clearSearch() {
+      document.getElementById('search-input').value = '';
+      renderRecords();
+    }
+
+    function resetFilters() {
+      document.getElementById('search-input').value = '';
+      document.getElementById('category-select').value = 'ALL';
+      document.getElementById('region-select').value = 'ALL';
+      document.getElementById('media-select').value = 'ALL';
+      document.getElementById('date-input').value = '';
+      document.getElementById('sort-select').value = 'date_desc';
+      initUI();
+    }
+
+    function trackGAEvent(eventName, params) {
+      if (typeof gtag === 'function') {
+        gtag('event', eventName, params);
+      }
+    }
+
+    // イベントリスナー登録
+    document.getElementById('search-input').addEventListener('input', renderRecords);
+    document.getElementById('category-select').addEventListener('change', (e) => {
+      trackGAEvent('filter_category', { category: e.target.value });
+      initUI();
+    });
+    document.getElementById('region-select').addEventListener('change', (e) => {
+      trackGAEvent('filter_region', { region: e.target.value });
+      renderRecords();
+    });
+    document.getElementById('media-select').addEventListener('change', (e) => {
+      trackGAEvent('filter_media', { media: e.target.value });
+      renderRecords();
+    });
+    document.getElementById('date-input').addEventListener('change', (e) => {
+      trackGAEvent('filter_date', { date: e.target.value });
+      renderRecords();
+    });
+    document.getElementById('sort-select').addEventListener('change', renderRecords);
+
+    // 初回データ読込
+    fetchSheetData();
+  </script>
+</body>
+</html>

@@ -44,7 +44,7 @@
         <h1 class="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2">
           <span>🔍</span> ムスリム問題ウォッチ アーカイブ
         </h1>
-        <p class="text-xs sm:text-sm text-slate-300 mt-0.5">国内各地の動向・SNS投稿・報道記録のデータベース</p>
+        <p class="text-xs sm:text-sm text-slate-300 mt-0.5">国内各地の動向・SNS投稿・報道記録のデータベース（全8カテゴリ対応）</p>
       </div>
       <div class="flex items-center gap-2 self-end sm:self-auto">
         <span id="status-indicator" class="text-xs bg-slate-700/90 text-slate-200 px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-slate-600">
@@ -63,12 +63,12 @@
 
     <!-- 共有設定アラート（同期失敗時のみ表示） -->
     <div id="sync-warning" class="hidden bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-3.5 mb-5 text-xs leading-relaxed">
-      <strong>💡 スプレッドシートのリアルタイム変更を反映させるには：</strong><br>
-      スプレッドシート右上の「共有」ボタンから、一般的なアクセスを<strong>「リンクを知っている全員（閲覧者）」</strong>に設定してください（現在は内蔵された最新34件のデータを表示しています）。
+      <strong>💡 スプレッドシートのリアルタイム変更を自動反映させるには：</strong><br>
+      スプレッドシート右上の「共有」ボタンから、一般的なアクセスを<strong>「リンクを知っている全員（閲覧者）」</strong>に設定してください（現在は内蔵された最新58件のデータを表示しています）。
     </div>
 
-    <!-- カテゴリ別 集計サマリーバー -->
-    <section id="summary-stats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 mb-6">
+    <!-- カテゴリ別 集計サマリーバー（8カテゴリ対応：モバイル2列 / タブレット4列） -->
+    <section id="summary-stats" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-6">
       <!-- JSで動的生成 -->
     </section>
 
@@ -80,7 +80,7 @@
         <div class="sm:col-span-2 lg:col-span-4">
           <label for="search-input" class="block text-xs font-bold text-slate-600 mb-1">🔍 キーワード検索（見出し・投稿者・地域）</label>
           <div class="relative">
-            <input type="text" id="search-input" placeholder="例：給食、土葬、奈良、スシロー、病院..." 
+            <input type="text" id="search-input" placeholder="例：市川市、子ども食堂、神社、給食、土葬..." 
               class="w-full pl-3 pr-8 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
             <button id="clear-search" onclick="clearSearch()" class="hidden absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 text-sm">✕</button>
           </div>
@@ -112,7 +112,7 @@
 
         <!-- 日付指定 -->
         <div class="lg:col-span-2">
-          <label for="date-input" class="block text-xs font-bold text-slate-600 mb-1">📅 日付・年月検索</label>
+          <label for="date-input" class="block text-xs font-bold text-slate-600 mb-1">📅 日付検索</label>
           <input type="date" id="date-input" class="w-full px-2.5 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
       </div>
@@ -187,12 +187,12 @@
   </footer>
 
   <script>
-    // スプレッドシート連携URL（キャッシュ回避＆型ズレ防止設定）
+    // スプレッドシート連携設定（キャッシュ回避＆全件取得対応）
     const SHEET_KEY = ['1oHSo8Jl4R3IIPBtGxLwd', 'QAv5czD1WTRc0VMKvsyYtlU'].join('');
     const CSV_EXPORT_URL = `https://docs.google.com/spreadsheets/d/${SHEET_KEY}/export?format=csv&gid=0`;
     const GVIZ_JSON_URL = `https://docs.google.com/spreadsheets/d/${SHEET_KEY}/gviz/tq?tqx=out:json&gid=0`;
 
-    // 最新版バックアップデータ（全34件：Southern投稿のX直接URL・反響修正、および新規追加3件を完全収録）
+    // 最新版バックアップデータ（全58件：「子供を利用した浸透工作」9件・「神社仏閣の火災・破壊」15件を含む完全データ）
     const FALLBACK_DATA = [
       { date: "2026/05/12", category: "祈祷室", region: "不明（空港）", media: "Facebook", author: "digitalspartanspk", summary: "空港内に設置されたポッド型の携帯祈祷室の画像", reaction: "3.8K", url: "https://www.facebook.com/digitalspartanspk/posts/pfbid02m8KFDq9mAG524SRBfKVwz22tAh7S1nXcrbisrZgVkAv6g257WsGQM4pXRcnqCt5Sl" },
       { date: "2026/05/12", category: "祈祷室", region: "不明", media: "Facebook", author: "ExplainThis92", summary: "「PRAYER SPACE」と表示された個室ブースの紹介", reaction: "1K", url: "https://www.facebook.com/ExplainThis92/posts/pfbid0ojMV7LrEXaYzBsoRtRemQPnNoQ1cWnDbVc752M7KNso1eR8HBXCtwbqWJotoWMpXl" },
@@ -227,22 +227,64 @@
       { date: "2026/11/02", category: "ヒジャブ・ひげ容認の求人", region: "全国", media: "Facebook", author: "（グループ投稿）", summary: "KRNニュース風グラフィックのFacebookグループでの共有", reaction: "95", url: "https://www.facebook.com/groups/5115477715188271/permalink/28905994892376553/" },
       { date: "2026/11/03", category: "トイレの水洗浄", region: "国内", media: "X", author: "@yuy_yuyuy", summary: "ムスリム100人超と働く人のThreads投稿を紹介。ウォシュレットの代わりにペットボトルで洗浄して便座・床が水浸しになる、給水サーバーで補充したボトルを洗浄に使う例もあるとの目撃談（写真付き）", reaction: "いいね4,126／約91.8万回表示", url: "https://x.com/yuy_yuyuy/status/2117600280183476518" },
       { date: "2024/12/19", category: "祈祷室", region: "国内", media: "X（Togetterまとめ）", author: "@USA_SOG_ARMY ほか", summary: "空港の礼拝室ピクトグラムをめぐるX投稿のまとめ。「祈祷室は概ね小浄設備のあるムスリム用の礼拝場所」との指摘も", reaction: "", url: "https://togetter.com/li/2482704" },
-      { date: "", category: "介護・病院のヒジャブ", region: "茨城県水戸市", media: "YouTube", author: "（チャンネル名未確認）", summary: "Shorts動画「ムスリム採用の病院、やっぱりヒジャブ姿のまま働いていた」。水戸赤十字病院の特定技能採用をめぐる反応", reaction: "", url: "http://www.youtube.com/watch?v=lzy0pF6q0i4" }
+      { date: "", category: "介護・病院のヒジャブ", region: "茨城県水戸市", media: "YouTube", author: "（チャンネル名未確認）", summary: "Shorts動画「ムスリム採用の病院、やっぱりヒジャブ姿のまま働いていた」。水戸赤十字病院の特定技能採用をめぐる反応", reaction: "", url: "http://www.youtube.com/watch?v=lzy0pF6q0i4" },
+      { date: "2026/10/11", category: "子供を利用した浸透工作", region: "千葉県市川市", media: "報道", author: "千葉日報（チバテレ＋プラス）", summary: "行徳モスクの信者・役員ら16人が自主防犯団体「ヒラー・マスジド会」を設立し市の認可を受け、新浜小学校・幸小学校周辺などで子どもの見守りパトロールを開始（9月18日〜、行徳署員の作成したルート・指導のもと巡回）。モスク前の公園での集団礼拝が不許可となった後の動き", reaction: "", url: "https://www.chiba-tv.com/plus/detail/2026102100954" },
+      { date: "2026/10/31", category: "子供を利用した浸透工作", region: "千葉県市川市", media: "報道", author: "AERA DIGITAL", summary: "見守り開始から1カ月足らずで、市役所に全国から抗議・誹謗中傷が相次いだと報じられた。市はモスク側や警察を交えて話し合う方針", reaction: "", url: "https://news.yahoo.co.jp/articles/ed4986f122cf58c2705f6818260ed9a3218b9297" },
+      { date: "2026/10/16", category: "子供を利用した浸透工作", region: "千葉県市川市", media: "報道", author: "両論ニュース", summary: "見守り活動の検証記事。実施自体は事実で、「警察が依頼」は不正確（団体側が市に申請し認可）。保護者・学校への事前説明の有無は公式には確認できていないと整理", reaction: "", url: "https://ryoron.com/articles/ichikawa-mosque-patrol/" },
+      { date: "2026/11/04", category: "子供を利用した浸透工作", region: "千葉県市川市", media: "Instagram", author: "@ganbarushigeo", summary: "全国から約850件の苦情・抗議が寄せられ、市川市が見守り活動の延期を要請したとの報道を紹介する動画。「延期であって中止ではない」と強調（投稿内容ベース）", reaction: "いいね約2.1K／コメント290", url: "https://www.instagram.com/reel/DfUD_uoTWyN/" },
+      { date: "2026/10/11", category: "子供を利用した浸透工作", region: "千葉県市川市", media: "Threads", author: "@su_te_san", summary: "千葉日報記事の画像とともに紹介。不安を感じたという地元保護者とされるコメントや、「子どもをイメージアップに使うな」等のネット上の反応を引用する投稿", reaction: "いいね約1.9K／コメント150", url: "https://www.threads.com/@su_te_san/post/DeW15LZj1Xx" },
+      { date: "2026/05/07", category: "子供を利用した浸透工作", region: "愛知県津島市", media: "報道", author: "JP-NewsFocus（原報道：朝日新聞）", summary: "日本アハマディア・ムスリム協会ジャパンモスクの「子ども食堂 ありがとう」が3周年。ひとり親・困窮世帯の親子らに食事を提供し、地域住民がモスクやイスラム文化に触れる入口になっていると報じられた", reaction: "", url: "https://jp-newsfocus.com/tsushima-mosque-kodomo-shokudo-20260501/" },
+      { date: "", category: "子供を利用した浸透工作", region: "東京都豊島区", media: "報道", author: "TBSラジオ", summary: "マスジド大塚で子育て交流イベント「モスクにおいでよ！」を開催（慶應大のゼミとNPOが企画）。同モスクは地域の子ども食堂へ食料品を提供するフードドライブも継続していると紹介（TBSラジオ「人権TODAY」）", reaction: "", url: "https://www.tbsradio.jp/articles/93237/" },
+      { date: "2026/08/24", category: "子供を利用した浸透工作", region: "北海道札幌市", media: "報道", author: "HBC北海道放送", summary: "札幌国際プラザの事業で市内の小学生がモスクを訪問し、インターナショナルスクールに通うエジプトやモロッコ等の子どもたちと交流、イスラム教について学んだと報道", reaction: "", url: "https://newsdig.tbs.co.jp/articles/hbc/2892986?display=1" },
+      { date: "2026/07/24", category: "子供を利用した浸透工作", region: "静岡県静岡市", media: "報道", author: "JP-NewsFocus", summary: "静岡マスジドを訪れた中学生がヒジャブ着用や礼拝動作を体験する映像がXで拡散し「布教ではないか」と議論に。「改宗した生徒がいた」との主張は一次資料で裏付けられず、運営協会は勧誘を否定していると整理", reaction: "", url: "https://jp-newsfocus.com/shizuoka-mosque-students-prayer-controversy/" },
+      { date: "2023/05/03", category: "神社仏閣の火災・破壊", region: "兵庫県神戸市", media: "報道", author: "神戸新聞NEXTほか", summary: "瑞丘八幡神社の賽銭箱等を壊した疑いでガンビア国籍の男（29）が逮捕され、近くの池姫地蔵尊の地蔵3体を壊した疑いでも逮捕。参拝していた女性が「神はアッラーしかいない」等と言われたと宮司が証言したとテレビ報道。神社分は起訴、地蔵分は不起訴。宗教的発言は伝聞で、動機が確定したわけではない", reaction: "", url: "https://minnanonews.jp/main/local/hyogo/1684841137/1684841137.html" },
+      { date: "2026/03/08", category: "神社仏閣の火災・破壊", region: "京都府京都市", media: "報道", author: "産経新聞（ライブドアニュース）", summary: "祇園の住宅街で、地蔵をまつる祠の木枠が壊され地蔵が倒されているのが見つかった。盗難被害はなし。犯人・動機は未特定で、国籍・宗教に関する報道はない", reaction: "", url: "https://news.livedoor.com/topics/detail/30729343/" },
+      { date: "2026/04/27", category: "神社仏閣の火災・破壊", region: "三重県名張市", media: "報道", author: "伊勢新聞（Yahoo!ニュース）", summary: "宇流冨志禰神社の木造本殿が全焼。当初は不審火の可能性も視野に捜査されたが、その後、放火の疑いで地元の無職の男（51）が逮捕され容疑を認めたと報道。容疑者の宗教は報じられていない", reaction: "", url: "https://news.yahoo.co.jp/articles/e836dd9db0bbf955ab9ab6ea8be9ec91c96766f8" },
+      { date: "2026/05/06", category: "神社仏閣の火災・破壊", region: "新潟県新潟市", media: "報道", author: "NST新潟総合テレビ", summary: "市有形文化財・古町愛宕神社の本殿が全焼し、近隣の住宅・事務所にも延焼。出火原因は調査中で犯人・動機は未特定。国籍・宗教に関する報道はない", reaction: "", url: "https://news.nsttv.com/post/20260507-00000003-nst/" },
+      { date: "2026/05/20", category: "神社仏閣の火災・破壊", region: "広島県廿日市市", media: "報道", author: "FNNプライムオンライン", summary: "宮島・大聖院の「不消霊火堂」が全焼（「消えずの火」は分火が保管され無事）。廿日市市は出火原因を特定できなかったとする最終報告を発表。放火と断定する報道はない", reaction: "", url: "https://www.fnn.jp/articles/-/1119489" },
+      { date: "2026/01/15", category: "神社仏閣の火災・破壊", region: "福岡県北九州市", media: "報道", author: "テレビ西日本（TNCニュース）", summary: "須賀神社（八幡西区木屋瀬）の社務所兼住宅が焼失。本殿への延焼はなく、けが人なし。出火原因は調査中で、放火や犯人に関する報道はない", reaction: "", url: "https://news.tnc.co.jp/news/articles/NID2026011528741?" },
+      { date: "2026/02/07", category: "神社仏閣の火災・破壊", region: "愛媛県久万高原町", media: "報道", author: "あいテレビ（TBS NEWS DIG）", summary: "法蓮寺の本堂など3棟が全焼、けが人なし。出火原因・犯人に関する報道はない", reaction: "", url: "https://newsdig.tbs.co.jp/articles/-/2453602" },
+      { date: "2026/02/13", category: "神社仏閣の火災・破壊", region: "愛媛県松山市", media: "報道", author: "南海放送", summary: "宝塔寺の境内にある住職の住宅が全焼し、焼け跡から遺体1体が発見された。出火原因は警察が調査中。放火や犯人に関する報道はない", reaction: "", url: "https://news.ntv.co.jp/category/society/rba57e4331a38d434985fdc34f0a82044a" },
+      { date: "2026/02/20", category: "神社仏閣の火災・破壊", region: "山口県下関市", media: "報道", author: "時事通信", summary: "正琳寺の本堂など3棟が全焼し、焼け跡から5人の遺体が発見された。出火原因は調査中。放火の疑いや犯人に関する報道はない", reaction: "", url: "https://www.jiji.com/jc/article?k=2026022000757&g=soc" },
+      { date: "2026/04/24", category: "神社仏閣の火災・破壊", region: "富山県富山市", media: "報道", author: "KNB（日テレNEWS）", summary: "蓮照寺の本堂・庫裏などが全焼。実況見分で火元は住職の住宅の台所とみられると判明。放火・事件性を示す報道はない", reaction: "", url: "https://news.ntv.co.jp/n/knb/category/society/knea3e5eeca253423a8ad4d4d5c4587656" },
+      { date: "2026/05/16", category: "神社仏閣の火災・破壊", region: "富山県高岡市", media: "報道", author: "チューリップテレビ", summary: "大法寺の本堂・庫裏が全焼し、周辺の民家など少なくとも13棟に延焼。原因は未特定だが、続報で電気配線の不具合の可能性が報じられた。放火・犯人に関する報道はない", reaction: "", url: "https://newsdig.tbs.co.jp/articles/tut/2670589?display=1" },
+      { date: "2026/06/09", category: "神社仏閣の火災・破壊", region: "兵庫県神戸市", media: "報道", author: "サンテレビ", summary: "有馬稲荷神社の宮司宅・社務所・倉庫の3棟が全焼（本殿焼失の報道はなし）。宮司夫婦が軽傷。出火原因は調査中。放火・犯人に関する報道はない", reaction: "", url: "https://www.sun-tv.co.jp/suntvnews/news/2026/06/10/94943/" },
+      { date: "2026/06/13", category: "神社仏閣の火災・破壊", region: "北海道帯広市", media: "報道", author: "UHB北海道文化放送", summary: "成田山松光寺の建物内部が激しく燃えた。けが人なし。出火原因は調査中。放火・犯人に関する報道はない", reaction: "", url: "https://www.uhb.jp/news/single.html?id=60043" },
+      { date: "2026/06/30", category: "神社仏閣の火災・破壊", region: "佐賀県伊万里市", media: "報道", author: "産経新聞", summary: "円通寺の本堂・庫裏が全焼。同寺に住んでいた僧侶見習いの男（28）が放火の疑いで逮捕され、容疑を認めたと報道。動機は修行の量や厳しさへの不満などと供述。国籍・宗教をめぐる報道はない", reaction: "", url: "https://www.sankei.com/article/20260706-4OZRHSH2BFLKNEICDN3WGSOINU/" },
+      { date: "2026/06/01", category: "神社仏閣の火災・破壊", region: "京都府亀岡市", media: "報道", author: "京都新聞", summary: "千手寺の庫裏がほぼ全焼し、周辺の山林にも延焼。前住職本人が「敷地内で枯草を燃やしていたら建物に燃え移った」と話したと報道され、失火の可能性が高い事案", reaction: "", url: "https://www.kyoto-np.com/en/video/klsygsnNuc0" }
     ];
 
     let allRecords = [];
     let currentViewMode = 'card';
 
+    // カテゴリごとのスタイル定義（新カテゴリ2種＆表記ゆれにも完全対応）
     function getCategoryStyle(category) {
-      const styles = {
-        '祈祷室': { badge: 'bg-sky-50 text-sky-700 border-sky-200', icon: '🕌' },
-        'トイレの水洗浄': { badge: 'bg-cyan-50 text-cyan-700 border-cyan-200', icon: '🚰' },
-        'ハラール給食': { badge: 'bg-amber-50 text-amber-800 border-amber-200', icon: '🍱' },
-        '土葬': { badge: 'bg-purple-50 text-purple-700 border-purple-200', icon: '🪦' },
-        '介護・病院のヒジャブ': { badge: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: '🏥' },
-        'ヒジャブ・ひげ容認の求人': { badge: 'bg-rose-50 text-rose-700 border-rose-200', icon: '📋' }
-      };
-      return styles[category] || { badge: 'bg-slate-100 text-slate-700 border-slate-200', icon: '📌' };
+      const cat = (category || '').trim();
+      if (cat === '祈祷室') {
+        return { badge: 'bg-sky-50 text-sky-700 border-sky-200', icon: '🕌' };
+      }
+      if (cat === 'トイレの水洗浄') {
+        return { badge: 'bg-cyan-50 text-cyan-700 border-cyan-200', icon: '🚰' };
+      }
+      if (cat === 'ハラール給食') {
+        return { badge: 'bg-amber-50 text-amber-800 border-amber-200', icon: '🍱' };
+      }
+      if (cat === '土葬') {
+        return { badge: 'bg-purple-50 text-purple-700 border-purple-200', icon: '🪦' };
+      }
+      if (cat === '介護・病院のヒジャブ') {
+        return { badge: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: '🏥' };
+      }
+      if (cat === 'ヒジャブ・ひげ容認の求人') {
+        return { badge: 'bg-rose-50 text-rose-700 border-rose-200', icon: '📋' };
+      }
+      if (cat.includes('子供') || cat.includes('子ども') || cat.includes('浸透工作')) {
+        return { badge: 'bg-orange-50 text-orange-800 border-orange-200', icon: '🧒' };
+      }
+      if (cat.includes('神社仏閣') || cat.includes('火災')) {
+        return { badge: 'bg-red-50 text-red-700 border-red-200', icon: '⛩️' };
+      }
+      return { badge: 'bg-slate-100 text-slate-700 border-slate-200', icon: '📌' };
     }
 
     function getMediaBadge(media) {
@@ -257,7 +299,7 @@
       return styles[media] || 'bg-slate-50 text-slate-600 border-slate-200';
     }
 
-    // 反響（「いいね10,529／約260万回表示」や「31K」など）から最大数値を抽出して並び替え可能にする
+    // 反響から最大数値を抽出して並び替え可能にする
     function parseReactionScore(str) {
       if (!str) return 0;
       const s = str.toString().replace(/,/g, '');
@@ -275,7 +317,7 @@
       return maxVal;
     }
 
-    // CSVパーサー（スプレッドシートの改行やカンマを含むセルに完全対応）
+    // CSVパーサー
     function parseCSVText(text) {
       const rows = [];
       let row = [];
@@ -317,12 +359,12 @@
       return rows;
     }
 
-    // スプレッドシートからデータを取得（1. キャッシュ無効化CSV取得 → 2. JSONP取得 → 3. 最新34件バックアップ）
+    // スプレッドシートからデータを取得
     async function fetchSheetData() {
       const statusEl = document.getElementById('status-indicator');
       statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span> 同期中...`;
 
-      // 方法1: キャッシュ無効化つきCSVダイレクト取得（空欄の日付行も100%欠落せず取得可能）
+      // 方法1: キャッシュ無効化つきCSVダイレクト取得
       try {
         const res = await fetch(`${CSV_EXPORT_URL}&_nocache=${Date.now()}`, { cache: 'no-store' });
         if (res.ok) {
@@ -479,7 +521,8 @@
       pillsContainer.appendChild(createPillButton(`すべて (${allRecords.length})`, 'ALL'));
       categories.forEach(cat => {
         const count = allRecords.filter(r => r.category === cat).length;
-        pillsContainer.appendChild(createPillButton(`${cat} (${count})`, cat));
+        const style = getCategoryStyle(cat);
+        pillsContainer.appendChild(createPillButton(`${style.icon} ${cat} (${count})`, cat));
       });
     }
 
@@ -505,25 +548,32 @@
       return str.replace(/-/g, '/').trim();
     }
 
+    // 検索時の「子供 / 子ども」表記ゆれ吸収ヘルパー
+    function normalizeForSearch(str) {
+      if (!str) return '';
+      return str.toLowerCase().replace(/子ども/g, '子供');
+    }
+
     function renderRecords() {
-      const keyword = document.getElementById('search-input').value.trim().toLowerCase();
+      const rawKeyword = document.getElementById('search-input').value.trim();
+      const keyword = normalizeForSearch(rawKeyword);
       const selectedCat = document.getElementById('category-select').value;
       const selectedRegion = document.getElementById('region-select').value;
       const selectedMedia = document.getElementById('media-select').value;
       const selectedDate = normalizeDate(document.getElementById('date-input').value);
       const sortOrder = document.getElementById('sort-select').value;
 
-      document.getElementById('clear-search').classList.toggle('hidden', !keyword);
+      document.getElementById('clear-search').classList.toggle('hidden', !rawKeyword);
 
       let filtered = allRecords.filter(item => {
         const matchKeyword = !keyword || 
-          item.summary.toLowerCase().includes(keyword) ||
-          item.category.toLowerCase().includes(keyword) ||
-          item.region.toLowerCase().includes(keyword) ||
-          item.media.toLowerCase().includes(keyword) ||
-          item.author.toLowerCase().includes(keyword) ||
-          item.date.toLowerCase().includes(keyword) ||
-          item.reaction.toLowerCase().includes(keyword);
+          normalizeForSearch(item.summary).includes(keyword) ||
+          normalizeForSearch(item.category).includes(keyword) ||
+          normalizeForSearch(item.region).includes(keyword) ||
+          normalizeForSearch(item.media).includes(keyword) ||
+          normalizeForSearch(item.author).includes(keyword) ||
+          normalizeForSearch(item.date).includes(keyword) ||
+          normalizeForSearch(item.reaction).includes(keyword);
 
         const matchCat = selectedCat === 'ALL' || item.category === selectedCat;
         const matchRegion = selectedRegion === 'ALL' || item.region === selectedRegion;
@@ -575,19 +625,19 @@
             <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
               <div class="flex flex-wrap items-center gap-1.5">
                 <span class="text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded">${dateDisplay}</span>
-                <span class="text-xs font-bold px-2.5 py-0.5 rounded-full border ${catStyle.badge}">${catStyle.icon} ${ highlightText(item.category, keyword) }</span>
-                ${item.region ? `<span class="text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">📍 ${ highlightText(item.region, keyword) }</span>` : ''}
+                <span class="text-xs font-bold px-2.5 py-0.5 rounded-full border ${catStyle.badge}">${catStyle.icon} ${ highlightText(item.category, rawKeyword) }</span>
+                ${item.region ? `<span class="text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">📍 ${ highlightText(item.region, rawKeyword) }</span>` : ''}
               </div>
               ${item.reaction ? `<span class="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">🔥 ${escapeHtml(item.reaction)}</span>` : ''}
             </div>
 
-            <p class="text-sm sm:text-base font-bold text-slate-900 mb-3 leading-relaxed">${highlightText(item.summary, keyword)}</p>
+            <p class="text-sm sm:text-base font-bold text-slate-900 mb-3 leading-relaxed">${highlightText(item.summary, rawKeyword)}</p>
           </div>
 
           <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100 mt-2">
             <div class="flex items-center gap-2 text-xs text-slate-600">
-              <span class="font-bold px-2 py-0.5 rounded border ${mediaClass}">${highlightText(item.media || '不明', keyword)}</span>
-              <span class="font-medium text-slate-700 truncate max-w-[200px]" title="${escapeHtml(item.author)}">👤 ${highlightText(item.author || '記録なし', keyword)}</span>
+              <span class="font-bold px-2 py-0.5 rounded border ${mediaClass}">${highlightText(item.media || '不明', rawKeyword)}</span>
+              <span class="font-medium text-slate-700 truncate max-w-[220px]" title="${escapeHtml(item.author)}">👤 ${highlightText(item.author || '記録なし', rawKeyword)}</span>
             </div>
             ${item.url ? `
               <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" 
@@ -606,14 +656,14 @@
         tr.innerHTML = `
           <td class="py-3 px-3 whitespace-nowrap text-slate-600 font-medium text-xs">${escapeHtml(item.date || '-')}</td>
           <td class="py-3 px-3 whitespace-nowrap">
-            <span class="text-xs font-bold px-2 py-0.5 rounded-full border ${catStyle.badge}">${catStyle.icon} ${highlightText(item.category, keyword)}</span>
+            <span class="text-xs font-bold px-2 py-0.5 rounded-full border ${catStyle.badge}">${catStyle.icon} ${highlightText(item.category, rawKeyword)}</span>
           </td>
-          <td class="py-3 px-3 whitespace-nowrap text-xs font-medium text-slate-700">${highlightText(item.region || '-', keyword)}</td>
+          <td class="py-3 px-3 whitespace-nowrap text-xs font-medium text-slate-700">${highlightText(item.region || '-', rawKeyword)}</td>
           <td class="py-3 px-3 whitespace-nowrap text-xs">
-            <span class="font-bold px-1.5 py-0.5 rounded border ${mediaClass} mr-1">${highlightText(item.media, keyword)}</span>
-            <span class="text-slate-600">${highlightText(item.author, keyword)}</span>
+            <span class="font-bold px-1.5 py-0.5 rounded border ${mediaClass} mr-1">${highlightText(item.media, rawKeyword)}</span>
+            <span class="text-slate-600">${highlightText(item.author, rawKeyword)}</span>
           </td>
-          <td class="py-3 px-4 font-bold text-slate-800 text-xs sm:text-sm leading-relaxed">${highlightText(item.summary, keyword)}</td>
+          <td class="py-3 px-4 font-bold text-slate-800 text-xs sm:text-sm leading-relaxed">${highlightText(item.summary, rawKeyword)}</td>
           <td class="py-3 px-3 whitespace-nowrap text-right text-xs font-bold text-amber-700">${escapeHtml(item.reaction || '-')}</td>
           <td class="py-3 px-3 whitespace-nowrap text-center">
             ${item.url ? `

@@ -204,6 +204,11 @@
 
   </main>
 
+  <!-- コピー完了トースト通知 -->
+  <div id="toast-msg" class="fixed bottom-5 right-5 bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-lg hidden z-50">
+    🔗 リンクをコピーしました
+  </div>
+
   <!-- フッター -->
   <footer class="bg-white border-t border-slate-200 mt-12 py-4 text-center text-xs text-slate-400">
     ムスリム問題ウォッチ アーカイブ | Google Analytics 4 (G-ZKVVRD15VN) 連携
@@ -213,6 +218,7 @@
     const SHEET_KEY = ['1oHSo8Jl4R3IIPBtGxLwd', 'QAv5czD1WTRc0VMKvsyYtlU'].join('');
     const CSV_EXPORT_URL = `https://docs.google.com/spreadsheets/d/${SHEET_KEY}/export?format=csv&gid=0`;
     const GVIZ_JSON_URL = `https://docs.google.com/spreadsheets/d/${SHEET_KEY}/gviz/tq?tqx=out:json&gid=0`;
+    const STATE_STORAGE_KEY = 'muslim_watch_archive_state_v1';
 
     const FALLBACK_DATA = [
       { date: "2026/05/12", category: "祈祷室", region: "不明（空港）", media: "Facebook", author: "digitalspartanspk", summary: "空港内に設置されたポッド型の携帯祈祷室の画像", reaction: "3.8K", url: "https://www.facebook.com/digitalspartanspk/posts/pfbid02m8KFDq9mAG524SRBfKVwz22tAh7S1nXcrbisrZgVkAv6g257WsGQM4pXRcnqCt5Sl" },
@@ -277,6 +283,62 @@
 
     let allRecords = [];
     let currentViewMode = 'card';
+    let isRestoredOnce = false;
+
+    // ★スマホでリンク先に移動する直前に「スクロール位置」と「検索条件」を保存する関数
+    function saveAppStateAndFollow(category, media) {
+      try {
+        const state = {
+          keyword: document.getElementById('search-input').value,
+          category: document.getElementById('category-select').value,
+          region: document.getElementById('region-select').value,
+          media: document.getElementById('media-select').value,
+          date: document.getElementById('date-input').value,
+          sort: document.getElementById('sort-select').value,
+          viewMode: currentViewMode,
+          scrollY: window.scrollY
+        };
+        sessionStorage.setItem(STATE_STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {}
+      trackGAEvent('click_source_url', { category, media });
+    }
+
+    // ★「戻る」ボタンで帰ってきた時に前回の検索条件とスクロール位置を復元する関数
+    function restoreAppStateIfAvailable() {
+      if (isRestoredOnce) return;
+      isRestoredOnce = true;
+      try {
+        const raw = sessionStorage.getItem(STATE_STORAGE_KEY);
+        if (!raw) return;
+        const state = JSON.parse(raw);
+        if (state.keyword !== undefined) document.getElementById('search-input').value = state.keyword;
+        if (state.category) document.getElementById('category-select').value = state.category;
+        if (state.region) document.getElementById('region-select').value = state.region;
+        if (state.media) document.getElementById('media-select').value = state.media;
+        if (state.date) document.getElementById('date-input').value = state.date;
+        if (state.sort) document.getElementById('sort-select').value = state.sort;
+        if (state.viewMode) setViewMode(state.viewMode);
+
+        renderSummaryStats([...new Set(allRecords.map(r => r.category).filter(Boolean))]);
+        renderCategoryPills([...new Set(allRecords.map(r => r.category).filter(Boolean))]);
+        renderRecords();
+
+        if (typeof state.scrollY === 'number' && state.scrollY > 0) {
+          setTimeout(() => {
+            window.scrollTo({ top: state.scrollY, behavior: 'instant' });
+          }, 50);
+        }
+      } catch (e) {}
+    }
+
+    function copySourceUrl(url) {
+      if (!url) return;
+      navigator.clipboard.writeText(url).then(() => {
+        const toast = document.getElementById('toast-msg');
+        toast.classList.remove('hidden');
+        setTimeout(() => toast.classList.add('hidden'), 2000);
+      });
+    }
 
     function getCategoryStyle(category) {
       const cat = (category || '').trim();
@@ -389,6 +451,7 @@
               statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span> シート同期済 (${parsed.length}件・${nowStr})`;
               document.getElementById('sync-warning').classList.add('hidden');
               initUI();
+              restoreAppStateIfAvailable();
               return;
             }
           }
@@ -425,6 +488,7 @@
                 statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span> シート同期済 (${parsed.length}件・${nowStr})`;
                 document.getElementById('sync-warning').classList.add('hidden');
                 initUI();
+                restoreAppStateIfAvailable();
                 return;
               }
             }
@@ -453,6 +517,7 @@
       statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-400"></span> 最新データ表示中 (${allRecords.length}件)`;
       document.getElementById('sync-warning').classList.remove('hidden');
       initUI();
+      restoreAppStateIfAvailable();
     }
 
     function populateSelect(selectId, items, defaultLabel) {
@@ -614,6 +679,7 @@
         const mediaClass = getMediaBadge(item.media);
         const dateDisplay = item.date ? `📅 ${escapeHtml(item.date)}` : '📅 日付記録なし';
 
+        // ★target="_blank" を外し、同一タブ遷移＋状態保存でスマホから100%戻れるように変更
         const card = document.createElement('article');
         card.className = 'bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5 flex flex-col justify-between card-hover';
         card.innerHTML = `
@@ -633,14 +699,20 @@
           <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100 mt-2">
             <div class="flex items-center gap-2 text-xs text-slate-600">
               <span class="font-bold px-2 py-0.5 rounded border ${mediaClass}">${highlightText(item.media || '不明', rawKeyword)}</span>
-              <span class="font-medium text-slate-700 truncate max-w-[220px]" title="${escapeHtml(item.author)}">👤 ${highlightText(item.author || '記録なし', rawKeyword)}</span>
+              <span class="font-medium text-slate-700 truncate max-w-[180px]" title="${escapeHtml(item.author)}">👤 ${highlightText(item.author || '記録なし', rawKeyword)}</span>
             </div>
             ${item.url ? `
-              <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" 
-                onclick="trackGAEvent('click_source_url', { category: '${escapeHtml(item.category)}', media: '${escapeHtml(item.media)}' })"
-                class="text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition flex items-center gap-1">
-                元投稿・記事を見る ↗
-              </a>
+              <div class="flex items-center gap-1.5">
+                <button type="button" onclick="copySourceUrl('${escapeHtml(item.url)}')" title="URLをコピー"
+                  class="text-xs text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg transition font-medium">
+                  🔗 コピー
+                </button>
+                <a href="${escapeHtml(item.url)}"
+                  onclick="saveAppStateAndFollow('${escapeHtml(item.category)}', '${escapeHtml(item.media)}')"
+                  class="text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+                  元投稿・記事を見る →
+                </a>
+              </div>
             ` : '<span class="text-xs text-slate-400">リンクなし</span>'}
           </div>
         `;
@@ -662,9 +734,9 @@
           <td class="py-3 px-3 whitespace-nowrap text-right text-xs font-bold text-amber-700">${escapeHtml(item.reaction || '-')}</td>
           <td class="py-3 px-3 whitespace-nowrap text-center">
             ${item.url ? `
-              <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer"
-                onclick="trackGAEvent('click_source_url', { category: '${escapeHtml(item.category)}', media: '${escapeHtml(item.media)}' })"
-                class="text-xs font-bold text-indigo-600 hover:underline">開く ↗</a>
+              <a href="${escapeHtml(item.url)}"
+                onclick="saveAppStateAndFollow('${escapeHtml(item.category)}', '${escapeHtml(item.media)}')"
+                class="text-xs font-bold text-indigo-600 hover:underline">開く →</a>
             ` : '-'}
           </td>
         `;
@@ -713,6 +785,7 @@
       document.getElementById('media-select').value = 'ALL';
       document.getElementById('date-input').value = '';
       document.getElementById('sort-select').value = 'sheet_order';
+      try { sessionStorage.removeItem(STATE_STORAGE_KEY); } catch (e) {}
       initUI();
     }
 
@@ -740,6 +813,14 @@
       renderRecords();
     });
     document.getElementById('sort-select').addEventListener('change', renderRecords);
+
+    // ブラウザの「戻る」ボタン（bfcache復帰）時にも位置を復元
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) {
+        isRestoredOnce = false;
+        restoreAppStateIfAvailable();
+      }
+    });
 
     // 初回データ読込
     fetchSheetData();
